@@ -1,0 +1,10 @@
+{
+  "name": "headless-scraper",
+  "version": "1.0.0",
+  "description": "A headless scraper for Google Maps.",
+  "main": "scraper.js",
+  "dependencies": {
+    "puppeteer": "^19.0.0",
+    "json2csv": "^5.0.7"
+  }
+}

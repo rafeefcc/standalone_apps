@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scraped Results</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Poppins', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        background-color: #f7f9fc;
+        color: #333;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+      }
+      a {
+        color: #007bff; /* Default link color */
+        transition: color 0.3s ease;
+      }
+      body.dark-mode a {
+        color: #66ccff; /* Link color in dark mode */
+      }
+      .main-nav {
+        width: 100%;
+        background-color: #007bff;
+        padding: 10px 0;
+        text-align: center;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .main-nav .nav-link {
+        color: white;
+        text-decoration: none;
+        padding: 10px 20px;
+        margin: 0 10px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+      }
+      .main-nav .nav-link:hover {
+        background-color: #0056b3;
+      }
+      /* Dark mode styles for navigation */
+      body.dark-mode .main-nav {
+        background-color: #333;
+      }
+      body.dark-mode .main-nav .nav-link {
+        color: #f4f4f4;
+      }
+      body.dark-mode .main-nav .nav-link:hover {
+        background-color: #555;
+      }
+      .container {
+        width: 90%;
+        max-width: 1200px;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        background-color: white;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        transition:
+          background-color 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+      h1 {
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+      }
+      .filters label {
+        font-weight: bold;
+        color: #555;
+      }
+      .filters input[type='text'],
+      .filters select {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-family: 'Poppins', sans-serif;
+      }
+      .filters button {
+        padding: 8px 15px;
+        border: none;
+        background-color: #007bff;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      .filters button:hover {
+        background-color: #0056b3;
+      }
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      .results-table th,
+      .results-table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: left;
+      }
+      .results-table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+        color: #333;
+      }
+      .results-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .pagination button {
+        padding: 8px 15px;
+        border: 1px solid #007bff;
+        background-color: white;
+        color: #007bff;
+        border-radius: 5px;
+        cursor: pointer;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+      }
+      .pagination button:hover:not(:disabled) {
+        background-color: #007bff;
+        color: white;
+      }
+      .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .theme-switch {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 8px 15px;
+        background-color: #6c757d;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      /* Dark Mode Styles */
+      body.dark-mode {
+        background-color: #2c2c2c;
+        color: #f0f0f0;
+      }
+      .container.dark-mode {
+        background-color: #3a3a3a;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+      h1.dark-mode {
+        color: #f0f0f0;
+      }
+      .filters.dark-mode {
+        background-color: #4a4a4a;
+      }
+      .filters.dark-mode label {
+        color: #ccc;
+      }
+      .filters.dark-mode input[type='text'],
+      .filters.dark-mode select {
+        background-color: #555;
+        border-color: #666;
+        color: #f0f0f0;
+      }
+      .results-table.dark-mode th {
+        background-color: #4a4a4a;
+        color: #f0f0f0;
+      }
+      .results-table.dark-mode tr:nth-child(even) {
+        background-color: #3a3a3a;
+      }
+      .results-table.dark-mode td {
+        border-color: #555;
+      }
+      .pagination.dark-mode button {
+        border-color: #0056b3;
+        background-color: #3a3a3a;
+        color: #007bff;
+      }
+      .pagination.dark-mode button:hover:not(:disabled) {
+        background-color: #0056b3;
+        color: white;
+      }
+      .theme-switch.dark-mode {
+        background-color: #495057;
+      }
+
+      .column-visibility-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee; /* Separator */
+      }
+      .column-visibility-filters label {
+        font-weight: normal;
+        margin-right: 5px;
+      }
+      .column-visibility-filters input[type='checkbox'] {
+        margin-right: 2px;
+      }
+      /* Dark mode styles for new filters */
+      .dark-mode .column-visibility-filters {
+        border-top-color: #666;
+      }
+      .dark-mode .column-visibility-filters label {
+        color: #f0f0f0;
+      }
+
+      .app-footer {
+        width: 100%;
+        background-color: #f2f2f2;
+        color: #555;
+        text-align: center;
+        padding: 15px 0;
+        margin-top: 40px; /* Add some space above the footer */
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+      }
+      .app-footer p {
+        margin: 0;
+        font-size: 0.9em;
+      }
+      /* Dark mode styles for footer */
+      body.dark-mode .app-footer {
+        background-color: #222;
+        color: #bbb;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Mobile Responsiveness */
+      @media (max-width: 768px) {
+        .container {
+          width: 95%;
+          padding: 15px;
+        }
+        .filters {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .results-table,
+        .results-table thead,
+        .results-table tbody,
+        .results-table th,
+        .results-table td,
+        .results-table tr {
+          display: block;
+        }
+        .results-table thead tr {
+          position: absolute;
+          top: -9999px;
+          left: -9999px;
+        }
+        .results-table tr {
+          margin-bottom: 15px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        .results-table td {
+          border: none;
+          border-bottom: 1px solid #eee;
+          position: relative;
+          padding-left: 50%;
+          text-align: right;
+        }
+        .results-table td:before {
+          content: attr(data-label);
+          position: absolute;
+          left: 0;
+          width: 45%;
+          padding-left: 10px;
+          font-weight: bold;
+          text-align: left;
+        }
+        .results-table td:last-child {
+          border-bottom: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="main-nav">
+      <a href="/" class="nav-link">Control Panel</a>
+      <a href="/results" class="nav-link">Scraped Results</a>
+    </nav>
+    <div class="theme-switch" id="themeSwitch">🌙</div>
+
+    <div class="container" id="mainContainer">
+      <h1>Scraped Results</h1>
+
+      <div class="filters" id="filtersContainer">
+        <label for="businessTypeFilter">Business Type:</label>
+        <input
+          type="text"
+          id="businessTypeFilter"
+          placeholder="e.g., restaurants"
+        />
+
+        <label for="addressFilter">Address:</label>
+        <input
+          type="text"
+          id="addressFilter"
+          placeholder="e.g., New York, NY"
+        />
+
+        <label for="searchTermFilter">Search Term:</label>
+        <input type="text" id="searchTermFilter" placeholder="e.g., pizza" />
+
+        <label for="sourceFilter">Source:</label>
+        <select id="sourceFilter">
+          <option value="">All</option>
+          <option value="gmaps_api">Google Maps API</option>
+          <option value="gmaps_headless">Google Maps Headless</option>
+          <option value="facebook_comments">Facebook Comments</option>
+          <option value="facebook_posts">Facebook Posts</option>
+          <option value="wikipedia">Wikipedia</option>
+        </select>
+
+        <button id="applyFiltersBtn">Apply Filters</button>
+        <button id="purgeDbBtn" style="background-color: #dc3545;">Purge Database</button>
+        <input type="password" id="purgePassword" placeholder="Enter password to purge" style="display: none; margin-left: 10px;"/>
+        <div class="column-visibility-filters">
+          <label>Show Columns:</label>
+          <input type="checkbox" id="toggleSource" checked /><label
+            for="toggleSource"
+            >Source</label
+          >
+          <input type="checkbox" id="toggleNameTitle" checked /><label
+            for="toggleNameTitle"
+            >Name/Title</label
+          >
+          <input type="checkbox" id="toggleAddressContent" checked /><label
+            for="toggleAddressContent"
+            >Address/Content</label
+          >
+          <input type="checkbox" id="togglePhoneNumber" checked /><label
+            for="togglePhoneNumber"
+            >Phone Number</label
+          >
+          <input type="checkbox" id="toggleEmail" checked /><label
+            for="toggleEmail"
+            >Email</label
+          >
+          <input type="checkbox" id="toggleRatingUrl" checked /><label
+            for="toggleRatingUrl"
+            >Rating/URL</label
+          >
+          <input type="checkbox" id="toggleScrapedAt" checked /><label
+            for="toggleScrapedAt"
+            >Scraped At</label
+          >
+        </div>
+      </div>
+
+      <table class="results-table" id="resultsTable">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Name/Title</th>
+            <th>Address/Content</th>
+            <th>Phone Number</th>
+            <th>Email</th>
+            <th>Rating/URL</th>
+            <th>Scraped At</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Results will be loaded here by JavaScript -->
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <button id="prevPageBtn" disabled>Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="nextPageBtn" disabled>Next</button>
+      </div>
+    </div>
+
+    <script>
+      const businessTypeFilter = document.getElementById('businessTypeFilter');
+      const addressFilter = document.getElementById('addressFilter');
+      const searchTermFilter = document.getElementById('searchTermFilter'); // New search term filter
+      const sourceFilter = document.getElementById('sourceFilter');
+      const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+      const resultsTableBody = document.querySelector('#resultsTable tbody');
+      const prevPageBtn = document.getElementById('prevPageBtn');
+      const nextPageBtn = document.getElementById('nextPageBtn');
+      const pageInfoSpan = document.getElementById('pageInfo');
+      const themeSwitch = document.getElementById('themeSwitch');
+      const mainContainer = document.getElementById('mainContainer');
+      const filtersContainer = document.getElementById('filtersContainer');
+      const resultsTable = document.getElementById('resultsTable');
+
+      // Column visibility checkboxes
+      const toggleSource = document.getElementById('toggleSource');
+      const toggleNameTitle = document.getElementById('toggleNameTitle');
+      const toggleAddressContent = document.getElementById(
+        'toggleAddressContent',
+      );
+      const togglePhoneNumber = document.getElementById('togglePhoneNumber');
+      const toggleRatingUrl = document.getElementById('toggleRatingUrl');
+      const toggleScrapedAt = document.getElementById('toggleScrapedAt');
+      const toggleEmail = document.getElementById('toggleEmail');
+
+      const purgeDbBtn = document.getElementById('purgeDbBtn');
+      const purgePasswordInput = document.getElementById('purgePassword');
+
+      let currentPage = 1;
+      const pageSize = 10; // Number of items per page
+
+      // Function to update column visibility
+      function updateColumnVisibility() {
+        const columns = [
+          { id: 'toggleSource', index: 0 },
+          { id: 'toggleNameTitle', index: 1 },
+          { id: 'toggleAddressContent', index: 2 },
+          { id: 'togglePhoneNumber', index: 3 },
+          { id: 'toggleEmail', index: 4 }, // New email column
+          { id: 'toggleRatingUrl', index: 5 },
+          { id: 'toggleScrapedAt', index: 6 },
+        ];
+
+        const headerCells = resultsTable.querySelectorAll('th');
+        const rows = resultsTable.querySelectorAll('tbody tr');
+
+        columns.forEach((col) => {
+          const checkbox = document.getElementById(col.id);
+          const isVisible = checkbox.checked;
+          headerCells[col.index].style.display = isVisible
+            ? 'table-cell'
+            : 'none';
+
+          rows.forEach((row) => {
+            if (row.cells[col.index]) {
+              row.cells[col.index].style.display = isVisible
+                ? 'table-cell'
+                : 'none';
+            }
+          });
+        });
+      }
+
+      async function fetchResults() {
+        const businessType = businessTypeFilter.value;
+        const address = addressFilter.value;
+        const searchTerm = searchTermFilter.value; // Get search term filter value
+        const source = sourceFilter.value;
+
+        const params = new URLSearchParams({
+          business_type: businessType,
+          address: address,
+          search_term: searchTerm, // Include search term in params
+          source: source,
+          page: currentPage,
+          page_size: pageSize,
+        });
+
+        try {
+          const response = await fetch(`/api/results?${params.toString()}`);
+          const data = await response.json();
+
+          resultsTableBody.innerHTML = ''; // Clear previous results
+
+          if (data.results && data.results.length > 0) {
+            data.results.forEach((item) => {
+              const row = resultsTableBody.insertRow();
+              row.insertCell().textContent = item.source_display;
+              row.insertCell().textContent = item.name_title;
+              row.insertCell().textContent = item.address_content;
+              row.insertCell().textContent = item.phone_number || 'N/A'; // Add phone number column
+              row.insertCell().textContent = item.email || 'N/A'; // Add email column
+              const linkCell = row.insertCell();
+              if (item.url && item.url.startsWith('http')) {
+                // Assuming item.url for the link
+                const link = document.createElement('a');
+                link.href = item.url;
+                link.textContent = 'click for maps profile'; // Shortened text
+                link.target = '_blank'; // Open in new tab
+                linkCell.appendChild(link);
+                if (item.rating) {
+                  // Add rating if available
+                  linkCell.innerHTML += ` (${item.rating})`;
+                }
+              } else {
+                linkCell.textContent = item.rating || 'N/A'; // Display rating or N/A if no URL
+              }
+              row.insertCell().textContent = new Date(
+                item.scraped_at,
+              ).toLocaleString();
+
+              // For mobile responsiveness, add data-label attributes
+              row.cells[0].setAttribute('data-label', 'Source');
+              row.cells[1].setAttribute('data-label', 'Name/Title');
+              row.cells[2].setAttribute('data-label', 'Address/Content');
+              row.cells[3].setAttribute('data-label', 'Phone Number'); // Update data-label for phone
+              row.cells[4].setAttribute('data-label', 'Email'); // Update data-label for email
+              row.cells[5].setAttribute('data-label', 'Rating/URL'); // Update data-label for rating/URL
+              row.cells[6].setAttribute('data-label', 'Scraped At'); // Update data-label for scraped at
+            });
+          } else {
+            const row = resultsTableBody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 7; // Changed from 6 to 7 due to new column
+            cell.textContent = 'No results found.';
+            cell.style.textAlign = 'center';
+          }
+
+          // Update pagination controls
+          const totalPages = Math.ceil(data.total_count / pageSize);
+          pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+          prevPageBtn.disabled = currentPage === 1;
+          nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+
+          updateColumnVisibility(); // Call after table is populated
+        } catch (error) {
+          console.error('Error fetching results:', error);
+          resultsTableBody.innerHTML =
+            '<tr><td colspan="7" style="text-align: center; color: red;">Error loading results.</td></tr>'; // Changed colspan to 7
+        }
+      }
+
+      // Event Listeners
+      applyFiltersBtn.addEventListener('click', () => {
+        currentPage = 1; // Reset to first page on new filter
+        fetchResults();
+      });
+
+      addressFilter.addEventListener('input', () => {
+        // New event listener for address filter
+        currentPage = 1; // Reset to first page on new filter
+        fetchResults();
+      });
+
+      searchTermFilter.addEventListener('input', () => {
+        // New event listener for search term filter
+        currentPage = 1; // Reset to first page on new filter
+        fetchResults();
+      });
+
+      prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          fetchResults();
+        }
+      });
+
+      nextPageBtn.addEventListener('click', () => {
+        currentPage++;
+        fetchResults();
+      });
+
+      // Add event listeners for column visibility checkboxes
+      toggleSource.addEventListener('change', updateColumnVisibility);
+      toggleNameTitle.addEventListener('change', updateColumnVisibility);
+      toggleAddressContent.addEventListener('change', updateColumnVisibility);
+      togglePhoneNumber.addEventListener('change', updateColumnVisibility);
+      toggleEmail.addEventListener('change', updateColumnVisibility); // New email checkbox listener
+      toggleRatingUrl.addEventListener('change', updateColumnVisibility);
+      toggleScrapedAt.addEventListener('change', updateColumnVisibility);
+
+      // Initial load
+      document.addEventListener('DOMContentLoaded', fetchResults);
+
+      // Purge Database functionality
+      purgeDbBtn.addEventListener('click', () => {
+        purgePasswordInput.style.display = purgePasswordInput.style.display === 'none' ? 'inline-block' : 'none';
+        if (purgePasswordInput.style.display === 'inline-block') {
+          purgePasswordInput.focus();
+        }
+      });
+
+      purgePasswordInput.addEventListener('keydown', async (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault(); // Prevent form submission
+          await confirmPurge();
+        }
+      });
+
+      async function confirmPurge() {
+        const password = purgePasswordInput.value;
+        if (!password) {
+          alert('Please enter a password to purge the database.');
+          return;
+        }
+
+        try {
+          const response = await fetch('/purge_database', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ password: password }),
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+            alert(data.message);
+            window.location.reload(); // Reload page to show empty results
+          } else {
+            alert(`Error: ${data.error}`);
+          }
+        } catch (error) {
+          console.error('Error purging database:', error);
+          alert('An error occurred while trying to purge the database.');
+        } finally {
+          purgePasswordInput.value = '';
+          purgePasswordInput.style.display = 'none';
+        }
+      }
+
+      // Theme Switch
+      themeSwitch.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        mainContainer.classList.toggle('dark-mode');
+        filtersContainer.classList.toggle('dark-mode');
+        resultsTable.classList.toggle('dark-mode');
+        themeSwitch.classList.toggle('dark-mode');
+        document.querySelector('h1').classList.toggle('dark-mode'); // Toggle h1 class
+        if (document.body.classList.contains('dark-mode')) {
+          themeSwitch.textContent = '☀️'; // Sun emoji for light mode
+        } else {
+          themeSwitch.textContent = '🌙'; // Moon emoji for dark mode
+        }
+      });
+    </script>
+    <footer class="app-footer">
+      <p>Powered by Taxample.com(c) team 2024</p>
+    </footer>
+  </body>
+</html>

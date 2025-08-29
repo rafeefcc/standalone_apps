@@ -1,0 +1,13 @@
+{
+  "name": "facebook-scraper",
+  "version": "1.0.0",
+  "description": "A script to scrape Facebook posts.",
+  "main": "scraper.js",
+  "scripts": {
+    "start": "node scraper.js"
+  },
+  "dependencies": {
+    "json2csv": "^5.0.7",
+    "puppeteer": "^19.7.5"
+  }
+}
