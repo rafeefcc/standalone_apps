@@ -1,4 +1,6 @@
 Flask
 psycopg2-binary
 googlemaps
-fuzzywuzzy[speedup]
+fuzzywuzzy
+python-Levenshtein
+openpyxl
