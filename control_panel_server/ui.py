@@ -7,11 +7,26 @@ def render_base(page_content, page_title="Scraper Control Panel"):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{page_title}</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon-64x64.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96x96.png">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/static/apple-touch-icon-167x167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon-180x180.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="container">
+        <div class="visitor-stats">
+            <span>Total Visitors: <span id="total-visitors">-</span></span>
+            <span>Today: <span id="today-visitors">-</span></span>
+            <span>Last Hour: <span id="last-hour-visitors">-</span></span>
+        </div>
         <div class="theme-switch-wrapper">
             <label class="theme-switch" for="checkbox">
                 <input type="checkbox" id="checkbox" />
@@ -42,20 +57,36 @@ def render_base(page_content, page_title="Scraper Control Panel"):
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {{
                 setTheme(savedTheme);
-                return;
+            }} else {{
+                // If no saved theme, check system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+                setTheme(prefersDark.matches ? 'dark' : 'light');
             }}
 
-            // If no saved theme, check system preference
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-            setTheme(prefersDark.matches ? 'dark' : 'light');
-
             // Listen for changes in system preference
-            prefersDark.addEventListener('change', (e) => {{
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {{
                 // Only change if there's no manually saved theme
                 if (!localStorage.getItem('theme')) {{
                     setTheme(e.matches ? 'dark' : 'light');
                 }}
             }});
+
+            // Fetch visitor stats
+            function fetchVisitorStats() {{
+                fetch('/api/visitors')
+                    .then(response => response.json())
+                    .then(data => {{
+                        document.getElementById('total-visitors').textContent = data.total;
+                        document.getElementById('today-visitors').textContent = data.today;
+                        document.getElementById('last-hour-visitors').textContent = data.last_hour;
+                    }})
+                    .catch(error => console.error('Error fetching visitor stats:', error));
+            }}
+
+            // Fetch stats on page load
+            fetchVisitorStats();
+            // Refresh stats every 30 seconds
+            setInterval(fetchVisitorStats, 30000);
         }})();
     </script>
 </body>
@@ -86,8 +117,7 @@ def render_index_page():
                     <div class="card-body">
                         <div class="input-group mb-3">
                             <select id="scraper-select" class="form-select" onchange="showScraperOptions()">
-                                <option selected disabled>Choose a scraper...</option>
-                                <option value="gmaps-api">Google Maps API Scraper</option>
+                                <option value="gmaps-api" selected>Google Maps API Scraper</option>
                                 <option value="gmaps-headless">Headless Google Maps Scraper</option>
                                 <option value="facebook">Facebook Scraper</option>
                                 <option value="wikipedia">Wikipedia Test Scraper</option>
@@ -250,6 +280,11 @@ def render_index_page():
                     .catch(error => console.error('Error:', error));
                 }
             }
+
+            // Show scraper options on page load
+            document.addEventListener('DOMContentLoaded', () => {
+                showScraperOptions();
+            });
         </script>
     """
     return render_base(index_content, "Scraper Control Panel")

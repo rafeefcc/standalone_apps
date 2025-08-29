@@ -7,7 +7,7 @@ import time
 import psycopg2
 from psycopg2 import Error
 from googlemaps import Client as GoogleMapsClient
-from datetime import datetime
+from datetime import datetime, timedelta
 from fuzzywuzzy import fuzz
 import ui
 import os
@@ -151,6 +151,25 @@ def initialize_database():
                 );
             """)
             print("Table wikipedia_results checked/created.")
+
+            # Visitor Tracking Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS visitor_tracking (
+                    id SERIAL PRIMARY KEY,
+                    visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            print("Table visitor_tracking checked/created.")
+
+            # Email Downloads Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS email_downloads (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            print("Table email_downloads checked/created.")
             connection.commit()
             print("Database tables checked/created successfully.")
         except Error as e:
@@ -380,12 +399,109 @@ def insert_wikipedia_result(query_id, title):
                 cursor.close()
                 connection.close()
 
+def log_visitor():
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("INSERT INTO visitor_tracking (visited_at) VALUES (CURRENT_TIMESTAMP);")
+            connection.commit()
+        except Error as e:
+            print(f"Error logging visitor: {e}")
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+
+def get_total_visitors():
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT COUNT(*) FROM visitor_tracking;")
+            count = cursor.fetchone()[0]
+            return count
+        except Error as e:
+            print(f"Error getting total visitors: {e}")
+            return 0
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+    return 0
+
+def get_today_visitors():
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT COUNT(*) FROM visitor_tracking WHERE visited_at >= CURRENT_DATE;")
+            count = cursor.fetchone()[0]
+            return count
+        except Error as e:
+            print(f"Error getting today's visitors: {e}")
+            return 0
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+    return 0
+
+def get_last_hour_visitors():
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            one_hour_ago = datetime.now() - timedelta(hours=1)
+            cursor.execute("SELECT COUNT(*) FROM visitor_tracking WHERE visited_at >= %s;", (one_hour_ago,))
+            count = cursor.fetchone()[0]
+            return count
+        except Error as e:
+            print(f"Error getting last hour's visitors: {e}")
+            return 0
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+    return 0
+
+def insert_email_download(email):
+    connection = get_db_connection()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO email_downloads (email)
+                VALUES (%s);
+            """, (email,))
+            connection.commit()
+            return True
+        except Error as e:
+            print(f"Error inserting email download: {e}")
+            return False
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+
 # --- End Database Functions ---
 
 @app.route('/')
 def index():
     """Serve the main HTML page."""
+    log_visitor()
     return ui.render_index_page()
+
+@app.route('/api/visitors')
+def api_visitors():
+    total = get_total_visitors()
+    today = get_today_visitors()
+    last_hour = get_last_hour_visitors()
+    return jsonify({
+        "total": total,
+        "today": today,
+        "last_hour": last_hour
+    })
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
@@ -921,6 +1037,9 @@ def download_xlsx():
     email = request.args.get('email', '').strip()
     if not email:
         return jsonify({"error": "Email is required"}), 400
+
+    # Log the email download
+    insert_email_download(email)
 
     # Placeholder for sending email
     print(f"Received request to download XLSX for email: {email}")

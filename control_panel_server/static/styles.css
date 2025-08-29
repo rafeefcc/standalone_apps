@@ -1,0 +1,196 @@
+/* ================================
+   Base Styles (Light Mode)
+================================ */
+body { 
+    padding: 20px; 
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* ================================
+   Dark Mode Styles
+================================ */
+html[data-bs-theme="dark"] body {
+    background-color: #212529;
+    color: #dee2e6;
+}
+html[data-bs-theme="dark"] .card {
+    background-color: #343a40;
+    border-color: #495057;
+}
+html[data-bs-theme="dark"] .table {
+    --bs-table-bg: #343a40;
+    --bs-table-striped-bg: #3e444a;
+    --bs-table-color: #dee2e6;
+    --bs-table-border-color: #495057;
+}
+html[data-bs-theme="dark"] .nav-tabs .nav-link {
+    color: #dee2e6;
+}
+html[data-bs-theme="dark"] .nav-tabs .nav-link.active {
+    background-color: #343a40;
+    border-color: #495057 #495057 #343a40;
+}
+html[data-bs-theme="dark"] .form-control {
+    background-color: #495057;
+    color: #dee2e6;
+    border-color: #6c757d;
+}
+html[data-bs-theme="dark"] .form-select {
+    background-color: #495057;
+    color: #dee2e6;
+    border-color: #6c757d;
+}
+
+/* ================================
+   Log Box
+================================ */
+.log-box {
+    height: 300px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    overflow-y: scroll;
+    background-color: #f5f5f5;
+    white-space: pre-wrap;
+}
+html[data-bs-theme="dark"] .log-box {
+    background-color: #2b3035;
+    border-color: #495057;
+}
+
+/* ================================
+   Theme Switch
+================================ */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+.theme-switch {
+    display: inline-block;
+    height: 34px;
+    position: relative;
+    width: 60px;
+}
+.theme-switch input { display: none; }
+.slider {
+    background-color: #ccc;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+}
+.slider:before {
+    background-color: #fff;
+    bottom: 4px;
+    content: "";
+    height: 26px;
+    left: 4px;
+    position: absolute;
+    transition: .4s;
+    width: 26px;
+}
+input:checked + .slider {
+    background-color: #2196F3;
+}
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+.slider.round {
+    border-radius: 34px;
+}
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* ================================
+   Header Styles
+================================ */
+header.site-header {
+  padding: 10px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+html[data-bs-theme="dark"] header.site-header {
+  background-color: #343a40;
+  border-color: #495057;
+}
+
+/* Header nav links */
+header.site-header nav a {
+  margin-right: 15px;
+  color: #212529;
+  text-decoration: none;
+  font-weight: 500;
+}
+header.site-header nav a:hover {
+  text-decoration: underline;
+}
+html[data-bs-theme="dark"] header.site-header nav a {
+  color: #dee2e6;
+}
+
+/* ================================
+   Footer Styles
+================================ */
+footer.site-footer {
+  padding: 20px;
+  background-color: #f1f3f5;
+  border-top: 1px solid #dee2e6;
+  font-size: 0.9em;
+  color: #212529;
+}
+html[data-bs-theme="dark"] footer.site-footer {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #dee2e6;
+}
+
+/* Footer layout */
+footer.site-footer .footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+footer.site-footer .footer-col {
+  flex: 1 1 200px;
+  margin: 0 10px;
+  min-width: 150px;
+}
+
+/* Footer link styling */
+footer.site-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+footer.site-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Footer bottom line */
+footer.site-footer .footer-bottom {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.8em;
+}
+
+/* ================================
+   Visitor Stats
+================================ */
+.visitor-stats {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+html[data-bs-theme="dark"] .visitor-stats {
+    color: #adb5bd;
+}
+.visitor-stats span {
+    margin-right: 15px;
+}
