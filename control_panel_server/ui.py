@@ -347,7 +347,6 @@ def render_results_page():
                         <th>Rating</th>
                         <th>Phone</th>
                         <th>URL / Link</th>
-                        <th>Email</th>
                         <th>Scraped At</th>
                     </tr>
                 </thead>
@@ -392,7 +391,6 @@ def render_results_page():
                                         <td>${item.rating || 'N/A'}</td>
                                         <td>${item.phone_number || 'N/A'}</td>
                                         <td>${item.url ? `<a href="${item.url}" target="_blank">Link</a>` : 'N/A'}</td>
-                                        <td>${item.email || 'N/A'}</td>
                                         <td>${new Date(item.scraped_at).toLocaleString()}</td>
                                     </tr>
                                 `;

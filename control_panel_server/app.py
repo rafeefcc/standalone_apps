@@ -97,7 +97,6 @@ def initialize_database():
                     rating NUMERIC(2,1),
                     total_ratings INTEGER,
                     phone_number VARCHAR(50),
-                    email VARCHAR(255),
                     url TEXT,
                     scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -114,7 +113,6 @@ def initialize_database():
                     review_count INTEGER,
                     href TEXT,
                     phone_number VARCHAR(50),
-                    email VARCHAR(255),
                     url TEXT,
                     scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -221,7 +219,6 @@ def create_tables():
                     rating NUMERIC(2,1),
                     total_ratings INTEGER,
                     phone_number VARCHAR(50),
-                    email VARCHAR(255),
                     url TEXT,
                     scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -238,7 +235,6 @@ def create_tables():
                     review_count INTEGER,
                     href TEXT,
                     phone_number VARCHAR(50),
-                    email VARCHAR(255),
                     url TEXT,
                     scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -309,15 +305,15 @@ def insert_search_query(query_text, session_id):
                 cursor.close()
                 connection.close()
 
-def insert_gmaps_api_lead(query_id, name, address, rating, total_ratings, phone_number, email, url):
+def insert_gmaps_api_lead(query_id, name, address, rating, total_ratings, phone_number, url):
     connection = get_db_connection()
     if connection:
         try:
             cursor = connection.cursor()
             cursor.execute("""
-                INSERT INTO gmaps_api_leads (query_id, name, address, rating, total_ratings, phone_number, email, url)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
-            """, (query_id, name, address, rating, total_ratings, phone_number, email, url))
+                INSERT INTO gmaps_api_leads (query_id, name, address, rating, total_ratings, phone_number, url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s);
+            """, (query_id, name, address, rating, total_ratings, phone_number, url))
             connection.commit()
             return True
         except Error as e:
@@ -328,15 +324,15 @@ def insert_gmaps_api_lead(query_id, name, address, rating, total_ratings, phone_
                 cursor.close()
                 connection.close()
 
-def insert_gmaps_headless_lead(query_id, title, rating, review_count, href, phone_number, email, url):
+def insert_gmaps_headless_lead(query_id, title, rating, review_count, href, phone_number, url):
     connection = get_db_connection()
     if connection:
         try:
             cursor = connection.cursor()
             cursor.execute("""
-                INSERT INTO gmaps_headless_leads (query_id, title, rating, review_count, href, phone_number, email, url)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
-            """, (query_id, title, rating, review_count, href, phone_number, email, url))
+                INSERT INTO gmaps_headless_leads (query_id, title, rating, review_count, href, phone_number, url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s);
+            """, (query_id, title, rating, review_count, href, phone_number, url))
             connection.commit()
             return True
         except Error as e:
@@ -563,20 +559,28 @@ def scrape_api():
             
             # Insert into PSQL
             inserted_count = 0
-            for i, place in enumerate(all_results):
+            for i, place in enumerate(all_results[:50]): # Limit to 50 results
+                place_id = place.get('place_id')
+                phone_number = None
+                if place_id:
+                    try:
+                        details = gmaps.place(place_id=place_id, fields=['formatted_phone_number'])
+                        phone_number = details.get('result', {}).get('formatted_phone_number')
+                    except Exception as e:
+                        yield f"data: Error fetching details for place_id {place_id}: {e}\n\n"
+
                 if insert_gmaps_api_lead(
                     query_id,
                     place.get('name'),
                     place.get('formatted_address'),
                     place.get('rating'),
                     place.get('user_ratings_total'),
-                    place.get('formatted_phone_number'),
-                    None,
+                    phone_number,
                     place.get('website')
                 ):
                     inserted_count += 1
                 if (i + 1) % 10 == 0:
-                    yield f"data: Inserted {inserted_count}/{len(all_results)} records...\n\n"
+                    yield f"data: Inserted {inserted_count}/{len(all_results[:50])} records...\n\n"
 
             yield f"data: \n--- SCRIPT FINISHED SUCCESSFULLY ---\n\n"
             yield f"data: Success! {inserted_count} Google Maps API results inserted into PSQL.\n\n"
@@ -880,7 +884,7 @@ def api_results():
 
         # --- Google Maps API Leads ---
         cursor.execute("""
-            SELECT query_id, name, address, rating::text as rating, scraped_at, 'Google Maps API' as source_display, phone_number, url, email
+            SELECT query_id, name, address, rating::text as rating, scraped_at, 'Google Maps API' as source_display, phone_number, url
             FROM gmaps_api_leads WHERE query_id = ANY(%s)
         """, (session_query_ids,))
         for row in cursor.fetchall():
@@ -892,13 +896,12 @@ def api_results():
                 "rating": row[3],
                 "scraped_at": row[4].isoformat(),
                 "phone_number": row[6],
-                "url": row[7],
-                "email": row[8]
+                "url": row[7]
             })
 
         # --- Google Maps Headless Leads ---
         cursor.execute("""
-            SELECT query_id, title, NULL as address, rating::text as rating, href, scraped_at, 'Google Maps Headless' as source_display, phone_number, email
+            SELECT query_id, title, NULL as address, rating::text as rating, href, scraped_at, 'Google Maps Headless' as source_display, phone_number, url
             FROM gmaps_headless_leads WHERE query_id = ANY(%s)
         """, (session_query_ids,))
         for row in cursor.fetchall():
@@ -910,8 +913,7 @@ def api_results():
                 "rating": row[3],
                 "url": row[4],
                 "scraped_at": row[5].isoformat(),
-                "phone_number": row[7],
-                "email": row[8]
+                "phone_number": row[7]
             })
 
         # --- Facebook Comments ---
@@ -1079,13 +1081,13 @@ def download_xlsx():
         all_raw_results = []
         # --- Google Maps API Leads ---
         cursor.execute("""
-            SELECT query_id, name, address, rating::text as rating, scraped_at, 'Google Maps API' as source_display, phone_number, url, email
+            SELECT query_id, name, address, rating::text as rating, scraped_at, 'Google Maps API' as source_display, phone_number, url
             FROM gmaps_api_leads WHERE query_id = ANY(%s)
         """, (session_query_ids,))
         for row in cursor.fetchall():
             all_raw_results.append({
                 "query_id": row[0], "source_display": row[5], "name_title": row[1], "address_content": row[2],
-                "rating": row[3], "scraped_at": row[4].isoformat(), "phone_number": row[6], "url": row[7], "email": row[8]
+                "rating": row[3], "scraped_at": row[4].isoformat(), "phone_number": row[6], "url": row[7]
             })
         # ... (add other data sources similarly) ...
 
@@ -1103,7 +1105,7 @@ def download_xlsx():
         ws.title = "Scraped Results"
 
         # Add headers
-        headers = ["Source", "Name / Title", "Address / Content", "Rating", "Phone", "URL / Link", "Email", "Scraped At"]
+        headers = ["Source", "Name / Title", "Address / Content", "Rating", "Phone", "URL / Link", "Scraped At"]
         ws.append(headers)
 
         # Add data
@@ -1115,7 +1117,6 @@ def download_xlsx():
                 item.get('rating', 'N/A'),
                 item.get('phone_number', 'N/A'),
                 item.get('url', 'N/A'),
-                item.get('email', 'N/A'),
                 item.get('scraped_at', 'N/A')
             ]
             ws.append(row)
