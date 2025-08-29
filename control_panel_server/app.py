@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response, session, send_from_directory
+from flask import Flask, request, jsonify, Response, session, send_from_directory, redirect, url_for
 import subprocess
 
 import json
@@ -18,8 +18,13 @@ from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24) # Add a secret key for session management
+app.permanent_session_lifetime = timedelta(days=7)
 
 # --- Session Management ---
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
 @app.before_request
 def ensure_session_id():
     if 'session_id' not in session:
@@ -1146,6 +1151,271 @@ def purge_database():
     else:
         return jsonify({'error': 'Incorrect password.'}), 401
 
+
+@app.route('/admin')
+def admin_panel():
+    if not session.get('admin_logged_in'):
+        return ui.render_admin_login_page()
+    return ui.render_admin_page()
+
+@app.route('/admin/login', methods=['POST'])
+def admin_login():
+    data = request.get_json()
+    password = data.get('password')
+    if password == DB_CONFIG["password"]:
+        session['admin_logged_in'] = True
+        return jsonify({'success': True}), 200
+    else:
+        return jsonify({'success': False}), 401
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_panel'))
+
+@app.route('/api/admin/stats/leads_by_scraper')
+def get_leads_by_scraper():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    source_filter = request.args.get('source')
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        query = """
+            SELECT source_display, COUNT(*) 
+            FROM (
+                SELECT 'Google Maps API' as source_display FROM gmaps_api_leads
+                UNION ALL
+                SELECT 'Google Maps Headless' as source_display FROM gmaps_headless_leads
+                UNION ALL
+                SELECT 'Facebook Comments' as source_display FROM facebook_comments
+                UNION ALL
+                SELECT 'Facebook Posts' as source_display FROM facebook_search_posts
+                UNION ALL
+                SELECT 'Wikipedia' as source_display FROM wikipedia_results
+            ) as all_leads
+        """
+        if source_filter:
+            query += f" WHERE source_display = '{source_filter}'"
+
+        query += " GROUP BY source_display;"
+
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return jsonify(dict(results))
+    except Error as e:
+        print(f"Error fetching leads by scraper: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/admin/stats/lead_sources')
+def get_lead_sources():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        query = """
+            SELECT source_display, COUNT(*) 
+            FROM (
+                SELECT 'Google Maps API' as source_display FROM gmaps_api_leads
+                UNION ALL
+                SELECT 'Google Maps Headless' as source_display FROM gmaps_headless_leads
+                UNION ALL
+                SELECT 'Facebook Comments' as source_display FROM facebook_comments
+                UNION ALL
+                SELECT 'Facebook Posts' as source_display FROM facebook_search_posts
+                UNION ALL
+                SELECT 'Wikipedia' as source_display FROM wikipedia_results
+            ) as all_leads
+            GROUP BY source_display;
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return jsonify(dict(results))
+    except Error as e:
+        print(f"Error fetching lead sources: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/admin/stats/visitors_over_time')
+def get_visitors_over_time():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    source_filter = request.args.get('source')
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        query = """
+            SELECT DATE(visited_at), COUNT(*) 
+            FROM visitor_tracking
+        """
+        if source_filter:
+            # This is a bit tricky, as we don't have a direct link between visitors and lead sources.
+            # For now, I'll just filter by the date, and in the future, we can add a source to the visitor_tracking table.
+            pass
+
+        query += """
+            WHERE visited_at >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY DATE(visited_at)
+            ORDER BY DATE(visited_at);
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        # format results as a dictionary of date: count
+        results_dict = {row[0].isoformat(): row[1] for row in results}
+        return jsonify(results_dict)
+
+    except Error as e:
+        print(f"Error fetching visitors over time: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/admin/sql', methods=['POST'])
+def run_sql_query():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    query = data.get('query')
+
+    if not query or not query.strip().lower().startswith('select'):
+        return jsonify({"error": "Only SELECT queries are allowed."}), 400
+
+    # Extract table name from query
+    import re
+    match = re.search(r'from\s+([\w\d_]+)', query, re.IGNORECASE)
+    table_name = match.group(1) if match else None
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute(query)
+        results = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return jsonify({"columns": columns, "rows": results, "table_name": table_name})
+    except Error as e:
+        print(f"Error executing SQL query: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/admin/stats/business_type_searches')
+def get_business_type_searches():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT query_text FROM search_queries;")
+        queries = [row[0] for row in cursor.fetchall()]
+
+        # This is a simplified approach. A more robust solution would use NLP for entity extraction.
+        business_types = {}
+        for query in queries:
+            # Example: "restaurants in New York" -> "restaurants"
+            # This is a very basic way to extract business types and can be improved.
+            business_type = query.split(' in ')[0]
+            business_types[business_type] = business_types.get(business_type, 0) + 1
+
+        return jsonify(business_types)
+
+    except Error as e:
+        print(f"Error fetching business type searches: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/admin/stats/search_intent_searches')
+def get_search_intent_searches():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT query_text FROM search_queries;")
+        queries = [row[0] for row in cursor.fetchall()]
+
+        # Simplified intent extraction
+        intents = {}
+        for query in queries:
+            if 'near me' in query:
+                intent = query.replace(' near me', '')
+                intents[intent] = intents.get(intent, 0) + 1
+            else:
+                intents['other'] = intents.get('other', 0) + 1
+
+        return jsonify(intents)
+
+    except Error as e:
+        print(f"Error fetching search intent searches: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/admin/stats/location_searches')
+def get_location_searches():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT query_text FROM search_queries;")
+        queries = [row[0] for row in cursor.fetchall()]
+
+        # Simplified location extraction
+        locations = {}
+        for query in queries:
+            if ' in ' in query:
+                location = query.split(' in ')[1]
+                locations[location] = locations.get(location, 0) + 1
+
+        return jsonify(locations)
+
+    except Error as e:
+        print(f"Error fetching location searches: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
 
 if __name__ == '__main__':
     # Create database tables on startup

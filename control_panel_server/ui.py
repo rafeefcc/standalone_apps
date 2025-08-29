@@ -106,6 +106,9 @@ def render_index_page():
             <li class="nav-item">
                 <a class="nav-link" href="/results">View Results</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin">Admin Panel</a>
+            </li>
         </ul>
 
         <div class="tab-content" id="myTabContent">
@@ -137,16 +140,6 @@ def render_index_page():
                     </div>
                 </div>
 
-                <!-- Purge Database -->
-                <div class="card mt-4 border-danger">
-                    <div class="card-header bg-danger text-white">Admin: Purge Database</div>
-                    <div class="card-body">
-                        <div class="input-group mb-3">
-                            <input type="password" id="db-password" class="form-control" placeholder="Enter database password to purge">
-                            <button class="btn btn-danger" onclick="purgeDatabase()">Purge Database</button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -267,20 +260,6 @@ def render_index_page():
                 setupEventSource(fullUrl);
             }
 
-            function purgeDatabase() {
-                const password = document.getElementById('db-password').value;
-                if (confirm('Are you sure you want to permanently delete all data?')) {
-                    fetch('/purge_database', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password: password })
-                    })
-                    .then(response => response.json())
-                    .then(data => alert(data.message || data.error))
-                    .catch(error => console.error('Error:', error));
-                }
-            }
-
             // Show scraper options on page load
             document.addEventListener('DOMContentLoaded', () => {
                 showScraperOptions();
@@ -301,6 +280,9 @@ def render_results_page():
             </li>
             <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="/results">View Results</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin">Admin Panel</a>
             </li>
         </ul>
 
@@ -487,3 +469,396 @@ def render_results_page():
         </script>
     """
     return render_base(results_content, "Scraped Results")
+
+def render_admin_login_page():
+    """Renders the admin login page."""
+    login_content = """
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">Admin Panel Login</div>
+                        <div class="card-body">
+                            <div class="input-group mb-3">
+                                <input type="password" id="admin-password" class="form-control" placeholder="Enter admin password">
+                                <button class="btn btn-primary" onclick="loginAdmin()">Login</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function loginAdmin() {
+                const password = document.getElementById('admin-password').value;
+                fetch('/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Incorrect password.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        </script>
+    """
+    return render_base(login_content, "Admin Panel Login")
+
+def render_admin_page():
+    """Renders the main admin panel page."""
+    admin_content = """
+        <h1 class="mb-4">Admin Panel</h1>
+        <a href="/admin/logout" class="btn btn-secondary mb-4">Logout</a>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Filters</div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="updateDashboard('Google Maps API')">Google Maps API</button>
+                        <button class="btn btn-primary" onclick="updateDashboard('Google Maps Headless')">Google Maps Headless</button>
+                        <button class="btn btn-primary" onclick="updateDashboard('Facebook Comments')">Facebook Comments</button>
+                        <button class="btn btn-primary" onclick="updateDashboard('Facebook Posts')">Facebook Posts</button>
+                        <button class="btn btn-primary" onclick="updateDashboard('Wikipedia')">Wikipedia</button>
+                        <button class="btn btn-secondary" onclick="updateDashboard(null)">Clear Filter</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Leads by Scraper</div>
+                    <div class="card-body">
+                        <canvas id="leads-by-scraper-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Lead Sources</div>
+                    <div class="card-body">
+                        <canvas id="lead-sources-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Visitors Over Time</div>
+                    <div class="card-body">
+                        <canvas id="visitors-over-time-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Business Type Searches</div>
+                    <div class="card-body">
+                        <canvas id="business-type-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Search Intent Searches</div>
+                    <div class="card-body">
+                        <canvas id="search-intent-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Location Searches</div>
+                    <div class="card-body">
+                        <canvas id="location-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">SQL Search</div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <textarea id="sql-query" class="form-control" placeholder="Enter SQL query"></textarea>
+                            <button class="btn btn-primary" onclick="runSQLQuery()">Run Query</button>
+                        </div>
+                        <div id="sql-results-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">Admin: Purge Database</div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <input type="password" id="db-password" class="form-control" placeholder="Enter database password to purge">
+                            <button class="btn btn-danger" onclick="purgeDatabase()">Purge Database</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Chart 1: Leads by Scraper
+            fetch('/api/admin/stats/leads_by_scraper')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('leads-by-scraper-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(data),
+                            datasets: [{
+                                label: '# of Leads',
+                                data: Object.values(data),
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                });
+
+            // Chart 2: Lead Sources
+            fetch('/api/admin/stats/lead_sources')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('lead-sources-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: Object.keys(data),
+                            datasets: [{
+                                label: '# of Leads',
+                                data: Object.values(data),
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)',
+                                    'rgba(75, 192, 192, 0.2)',
+                                    'rgba(153, 102, 255, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            onClick: (evt, item) => {
+                                if (item.length > 0) {
+                                    const chart = item[0].chart;
+                                    const label = chart.data.labels[item[0].index];
+                                    updateDashboard(label);
+                                }
+                            }
+                        }
+                    });
+                });
+
+            // Chart 3: Visitors Over Time
+            fetch('/api/admin/stats/visitors_over_time')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('visitors-over-time-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Object.keys(data),
+                            datasets: [{
+                                label: '# of Visitors',
+                                data: Object.values(data),
+                                fill: false,
+                                borderColor: 'rgb(75, 192, 192)',
+                                tension: 0.1
+                            }]
+                        }
+                    });
+                });
+
+            // Chart 4: Business Type Searches
+            fetch('/api/admin/stats/business_type_searches')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('business-type-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(data),
+                            datasets: [{
+                                label: '# of Searches',
+                                data: Object.values(data),
+                                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                                borderColor: 'rgba(255, 159, 64, 1)',
+                                borderWidth: 1
+                            }]
+                        }
+                    });
+                });
+
+            // Chart 5: Search Intent Searches
+            fetch('/api/admin/stats/search_intent_searches')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('search-intent-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(data),
+                            datasets: [{
+                                label: '# of Searches',
+                                data: Object.values(data),
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        }
+                    });
+                });
+
+            // Chart 6: Location Searches
+            fetch('/api/admin/stats/location_searches')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('location-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(data),
+                            datasets: [{
+                                label: '# of Searches',
+                                data: Object.values(data),
+                                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                borderWidth: 1
+                            }]
+                        }
+                    });
+                });
+
+            function runSQLQuery() {
+                const query = document.getElementById('sql-query').value;
+                fetch('/api/admin/sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('sql-results-container');
+                    if (data.error) {
+                        container.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+
+                    if (data.table_name) {
+                        updateDashboard(data.table_name);
+                    }
+
+                    let table = '<table class="table table-striped mt-3"><thead><tr>';
+                    data.columns.forEach(column => {
+                        table += `<th>${column}</th>`;
+                    });
+                    table += '</tr></thead><tbody>';
+                    data.rows.forEach(row => {
+                        table += '<tr>';
+                        row.forEach(cell => {
+                            table += `<td>${cell}</td>`;
+                        });
+                        table += '</tr>';
+                    });
+                    table += '</tbody></table>';
+                    container.innerHTML = table;
+                })
+                .catch(error => console.error('Error:', error));
+            }
+
+            function updateDashboard(filter) {
+                const tableMap = {
+                    'gmaps_api_leads': 'Google Maps API',
+                    'gmaps_headless_leads': 'Google Maps Headless',
+                    'facebook_comments': 'Facebook Comments',
+                    'facebook_search_posts': 'Facebook Posts',
+                    'wikipedia_results': 'Wikipedia'
+                };
+
+                let source_filter = tableMap[filter] || filter;
+
+                let url_leads = '/api/admin/stats/leads_by_scraper';
+                let url_visitors = '/api/admin/stats/visitors_over_time';
+
+                if (source_filter) {
+                    url_leads += `?source=${source_filter}`;
+                    url_visitors += `?source=${source_filter}`;
+                }
+
+                // Update Leads by Scraper Chart
+                fetch(url_leads)
+                    .then(response => response.json())
+                    .then(data => {
+                        const chart = Chart.getChart("leads-by-scraper-chart");
+                        chart.data.labels = Object.keys(data);
+                        chart.data.datasets[0].data = Object.values(data);
+                        chart.update();
+                    });
+
+                // Update Visitors Over Time Chart
+                fetch(url_visitors)
+                    .then(response => response.json())
+                    .then(data => {
+                        const chart = Chart.getChart("visitors-over-time-chart");
+                        chart.data.labels = Object.keys(data);
+                        chart.data.datasets[0].data = Object.values(data);
+                        chart.update();
+                    });
+            }
+
+            function purgeDatabase() {
+                const password = document.getElementById('db-password').value;
+                if (confirm('Are you sure you want to permanently delete all data?')) {
+                    fetch('/purge_database', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: password })
+                    })
+                    .then(response => response.json())
+                    .then(data => alert(data.message || data.error))
+                    .catch(error => console.error('Error:', error));
+                }
+            }
+        </script>
+    """
+    return render_base(admin_content, "Admin Panel")
