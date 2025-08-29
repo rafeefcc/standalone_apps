@@ -401,18 +401,19 @@ def insert_wikipedia_result(query_id, title):
                 connection.close()
 
 def log_visitor():
-    connection = get_db_connection()
-    if connection:
-        try:
-            cursor = connection.cursor()
-            cursor.execute("INSERT INTO visitor_tracking (visited_at) VALUES (CURRENT_TIMESTAMP);")
-            connection.commit()
-        except Error as e:
-            print(f"Error logging visitor: {e}")
-        finally:
-            if connection:
-                cursor.close()
-                connection.close()
+    if not session.get('admin_logged_in'):
+        connection = get_db_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute("INSERT INTO visitor_tracking (visited_at) VALUES (CURRENT_TIMESTAMP);")
+                connection.commit()
+            except Error as e:
+                print(f"Error logging visitor: {e}")
+            finally:
+                if connection:
+                    cursor.close()
+                    connection.close()
 
 def get_total_visitors():
     connection = get_db_connection()
