@@ -1,64 +1,218 @@
 /* ================================
-   Base Styles (Light Mode)
+   Base Styles (Futuristic Light Mode)
 ================================ */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
 body { 
+    font-family: 'Rajdhani', sans-serif;
     padding: 20px; 
-    transition: background-color 0.3s, color 0.3s;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
+    color: #2d3748;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Animated background particles */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(120, 255, 255, 0.3) 0%, transparent 50%);
+    animation: backgroundShift 20s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes backgroundShift {
+    0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    50% { opacity: 0.8; transform: scale(1.1) rotate(180deg); }
 }
 
 /* ================================
-   Dark Mode Styles
+   Dark Mode Styles (Cyberpunk)
 ================================ */
 html[data-bs-theme="dark"] body {
-    background-color: #212529;
-    color: #dee2e6;
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+    color: #e2e8f0;
 }
+
+html[data-bs-theme="dark"] body::before {
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(0, 255, 127, 0.15) 0%, transparent 50%);
+}
+
 html[data-bs-theme="dark"] .card {
-    background-color: #343a40;
-    border-color: #495057;
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(100, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 255, 255, 0.1);
 }
+
 html[data-bs-theme="dark"] .table {
-    --bs-table-bg: #343a40;
-    --bs-table-striped-bg: #3e444a;
-    --bs-table-color: #dee2e6;
-    --bs-table-border-color: #495057;
+    --bs-table-bg: rgba(30, 41, 59, 0.5);
+    --bs-table-striped-bg: rgba(51, 65, 85, 0.5);
+    --bs-table-color: #e2e8f0;
+    --bs-table-border-color: rgba(100, 255, 255, 0.3);
 }
+
 html[data-bs-theme="dark"] .nav-tabs .nav-link {
-    color: #dee2e6;
+    color: #cbd5e0;
+    border: 1px solid rgba(100, 255, 255, 0.2);
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
+
+html[data-bs-theme="dark"] .nav-tabs .nav-link:hover {
+    color: #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+    transform: translateY(-2px);
+}
+
 html[data-bs-theme="dark"] .nav-tabs .nav-link.active {
-    background-color: #343a40;
-    border-color: #495057 #495057 #343a40;
+    background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2));
+    border-color: #00ffff;
+    color: #ffffff;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
 }
+
 html[data-bs-theme="dark"] .form-control {
-    background-color: #495057;
-    color: #dee2e6;
-    border-color: #6c757d;
+    background: rgba(30, 41, 59, 0.7);
+    color: #e2e8f0;
+    border: 1px solid rgba(100, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
+
+html[data-bs-theme="dark"] .form-control:focus {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+    border-color: #00ffff;
+}
+
 html[data-bs-theme="dark"] .form-select {
-    background-color: #495057;
-    color: #dee2e6;
-    border-color: #6c757d;
+    background: rgba(30, 41, 59, 0.7);
+    color: #e2e8f0;
+    border: 1px solid rgba(100, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
 }
 
 /* ================================
-   Log Box
+   Light Mode Glassmorphism
+================================ */
+.card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    border-radius: 15px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 50px rgba(31, 38, 135, 0.5);
+}
+
+.table {
+    --bs-table-bg: rgba(255, 255, 255, 0.1);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-color: #2d3748;
+    --bs-table-border-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.nav-tabs .nav-link {
+    color: #4a5568;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(45deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+    border-color: rgba(102, 126, 234, 0.5);
+    color: #ffffff;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.2);
+    color: #2d3748;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+    border-color: #667eea;
+}
+
+.form-select {
+    background: rgba(255, 255, 255, 0.2);
+    color: #2d3748;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+/* ================================
+   Futuristic Log Box
 ================================ */
 .log-box {
     height: 300px;
-    border: 1px solid #ccc;
-    padding: 10px;
+    border: 2px solid rgba(102, 126, 234, 0.5);
+    padding: 15px;
     overflow-y: scroll;
-    background-color: #f5f5f5;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
     white-space: pre-wrap;
+    font-family: 'Orbitron', monospace;
+    border-radius: 10px;
+    box-shadow: inset 0 0 20px rgba(102, 126, 234, 0.2);
+    transition: all 0.3s ease;
 }
+
+.log-box:hover {
+    border-color: rgba(102, 126, 234, 0.8);
+    box-shadow: inset 0 0 30px rgba(102, 126, 234, 0.3), 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
 html[data-bs-theme="dark"] .log-box {
-    background-color: #2b3035;
-    border-color: #495057;
+    background: rgba(10, 25, 47, 0.7);
+    border-color: rgba(0, 255, 255, 0.5);
+    box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.1);
+    color: #00ff88;
+}
+
+html[data-bs-theme="dark"] .log-box:hover {
+    border-color: #00ffff;
+    box-shadow: inset 0 0 30px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.4);
 }
 
 /* ================================
-   Theme Switch
+   Futuristic Theme Switch
 ================================ */
 .theme-switch-wrapper {
     display: flex;
@@ -66,131 +220,354 @@ html[data-bs-theme="dark"] .log-box {
     position: absolute;
     top: 20px;
     right: 20px;
+    z-index: 1000;
 }
+
+.theme-switch-wrapper span {
+    margin-right: 10px;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+html[data-bs-theme="dark"] .theme-switch-wrapper span {
+    color: #cbd5e0;
+}
+
 .theme-switch {
     display: inline-block;
-    height: 34px;
+    height: 40px;
     position: relative;
-    width: 60px;
+    width: 70px;
 }
+
 .theme-switch input { display: none; }
+
 .slider {
-    background-color: #ccc;
+    background: linear-gradient(45deg, #667eea, #764ba2);
     bottom: 0;
     cursor: pointer;
     left: 0;
     position: absolute;
     right: 0;
     top: 0;
-    transition: .4s;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
+
 .slider:before {
-    background-color: #fff;
-    bottom: 4px;
+    background: linear-gradient(45deg, #ffffff, #f7fafc);
+    bottom: 3px;
     content: "";
-    height: 26px;
-    left: 4px;
+    height: 34px;
+    left: 3px;
     position: absolute;
-    transition: .4s;
-    width: 26px;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    width: 34px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
+
 input:checked + .slider {
-    background-color: #2196F3;
+    background: linear-gradient(45deg, #0c0c0c, #1a1a2e);
+    box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
 }
+
 input:checked + .slider:before {
-    transform: translateX(26px);
+    transform: translateX(30px);
+    background: linear-gradient(45deg, #00ffff, #ff00ff);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
 }
+
 .slider.round {
-    border-radius: 34px;
+    border-radius: 40px;
 }
+
 .slider.round:before {
     border-radius: 50%;
 }
 
 /* ================================
-   Header Styles
+   Futuristic Header
 ================================ */
 header.site-header {
-  padding: 10px 20px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-}
-html[data-bs-theme="dark"] header.site-header {
-  background-color: #343a40;
-  border-color: #495057;
+    padding: 15px 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
 }
 
-/* Header nav links */
+header.site-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+    animation: headerScan 3s linear infinite;
+}
+
+@keyframes headerScan {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+html[data-bs-theme="dark"] header.site-header {
+    background: rgba(10, 25, 47, 0.8);
+    border-color: rgba(0, 255, 255, 0.5);
+}
+
+html[data-bs-theme="dark"] header.site-header::before {
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+}
+
 header.site-header nav a {
-  margin-right: 15px;
-  color: #212529;
-  text-decoration: none;
-  font-weight: 500;
+    margin-right: 25px;
+    color: #2d3748;
+    text-decoration: none;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    padding: 8px 16px;
+    border-radius: 20px;
 }
+
+header.site-header nav a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+    border-radius: 20px;
+    transition: width 0.3s ease;
+}
+
+header.site-header nav a:hover::before {
+    width: 100%;
+}
+
 header.site-header nav a:hover {
-  text-decoration: underline;
+    color: #667eea;
+    transform: translateY(-2px);
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
 }
+
 html[data-bs-theme="dark"] header.site-header nav a {
-  color: #dee2e6;
+    color: #cbd5e0;
+}
+
+html[data-bs-theme="dark"] header.site-header nav a::before {
+    background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2));
+}
+
+html[data-bs-theme="dark"] header.site-header nav a:hover {
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
 }
 
 /* ================================
-   Footer Styles
+   Futuristic Footer
 ================================ */
 footer.site-footer {
-  padding: 20px;
-  background-color: #f1f3f5;
-  border-top: 1px solid #dee2e6;
-  font-size: 0.9em;
-  color: #212529;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-top: 2px solid rgba(102, 126, 234, 0.3);
+    font-size: 0.95em;
+    color: #4a5568;
+    font-family: 'Rajdhani', sans-serif;
+    margin-top: 50px;
+    position: relative;
 }
+
 html[data-bs-theme="dark"] footer.site-footer {
-  background-color: #343a40;
-  border-color: #495057;
-  color: #dee2e6;
+    background: rgba(10, 25, 47, 0.8);
+    border-color: rgba(0, 255, 255, 0.5);
+    color: #cbd5e0;
 }
 
-/* Footer layout */
 footer.site-footer .footer-inner {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
 }
+
 footer.site-footer .footer-col {
-  flex: 1 1 200px;
-  margin: 0 10px;
-  min-width: 150px;
+    flex: 1 1 200px;
+    min-width: 180px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
 }
 
-/* Footer link styling */
+footer.site-footer .footer-col:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+}
+
+html[data-bs-theme="dark"] footer.site-footer .footer-col {
+    background: rgba(30, 41, 59, 0.3);
+    border-color: rgba(0, 255, 255, 0.2);
+}
+
+html[data-bs-theme="dark"] footer.site-footer .footer-col:hover {
+    box-shadow: 0 10px 25px rgba(0, 255, 255, 0.2);
+}
+
 footer.site-footer a {
-  color: inherit;
-  text-decoration: none;
-}
-footer.site-footer a:hover {
-  text-decoration: underline;
+    color: inherit;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-/* Footer bottom line */
+footer.site-footer a:hover {
+    color: #667eea;
+    text-shadow: 0 0 8px rgba(102, 126, 234, 0.6);
+}
+
+html[data-bs-theme="dark"] footer.site-footer a:hover {
+    color: #00ffff;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+}
+
 footer.site-footer .footer-bottom {
-  text-align: center;
-  margin-top: 15px;
-  font-size: 0.8em;
+    text-align: center;
+    margin-top: 25px;
+    font-size: 0.85em;
+    opacity: 0.8;
 }
 
 /* ================================
-   Visitor Stats
+   Futuristic Visitor Stats
 ================================ */
 .visitor-stats {
     position: absolute;
     top: 20px;
     left: 20px;
-    font-size: 0.9em;
-    color: #6c757d;
+    font-size: 0.95em;
+    color: #4a5568;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    padding: 10px 20px;
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-family: 'Orbitron', monospace;
+    z-index: 1000;
 }
+
 html[data-bs-theme="dark"] .visitor-stats {
-    color: #adb5bd;
+    color: #cbd5e0;
+    background: rgba(10, 25, 47, 0.7);
+    border-color: rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
 }
+
 .visitor-stats span {
-    margin-right: 15px;
+    margin-right: 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.visitor-stats span:hover {
+    color: #667eea;
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.6);
+}
+
+html[data-bs-theme="dark"] .visitor-stats span:hover {
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+}
+
+/* ================================
+   Button Enhancements
+================================ */
+.btn {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 500;
+    border-radius: 25px;
+    padding: 10px 25px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: none;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+    color: white;
+}
+
+html[data-bs-theme="dark"] .btn {
+    background: linear-gradient(45deg, #00ffff, #ff00ff);
+    box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+}
+
+html[data-bs-theme="dark"] .btn:hover {
+    box-shadow: 0 8px 25px rgba(0, 255, 255, 0.6);
+}
+
+/* ================================
+   Scrollbar Styling
+================================ */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 10px;
+}
+
+html[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #00ffff, #ff00ff);
+}
+
+/* ================================
+   Responsive Design
+================================ */
+@media (max-width: 768px) {
+    .theme-switch-wrapper {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 20px;
+        justify-content: center;
+    }
+    
+    .visitor-stats {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    footer.site-footer .footer-inner {
+        flex-direction: column;
+    }
+    
+    header.site-header nav {
+        text-align: center;
+    }
+    
+    header.site-header nav a {
+        margin: 5px 10px;
+        display: inline-block;
+    }
 }
