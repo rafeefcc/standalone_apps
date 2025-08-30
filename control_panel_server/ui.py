@@ -19,6 +19,17 @@ def render_base(page_content, page_title="Scraper Control Panel"):
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon-180x180.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .spinner-border {{
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.5rem;
+        }}
+        .btn-loading {{
+            pointer-events: none;
+            opacity: 0.7;
+        }}
+    </style>
 </head>
 <body>
     <div class="container">
@@ -144,6 +155,8 @@ def render_index_page():
         </div>
 
         <script>
+            let currentEventSource = null;
+
             function showScraperOptions() {
                 const selection = document.getElementById('scraper-select').value;
                 const container = document.getElementById('scraper-options-container');
@@ -156,7 +169,9 @@ def render_index_page():
                             <div class="card-body">
                                 <div class="input-group mb-3">
                                     <input type="text" id="api-query" class="form-control" placeholder="Enter search query (e.g., 'restaurants in New York')">
-                                    <button class="btn btn-primary" onclick="scrapeAPI()">Scrape</button>
+                                    <button class="btn btn-primary" id="api-scrape-btn" onclick="scrapeAPI()">
+                                        <span class="btn-text">Scrape</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -168,7 +183,9 @@ def render_index_page():
                             <div class="card-body">
                                 <div class="input-group mb-3">
                                     <input type="text" id="headless-query" class="form-control" placeholder="Enter search query (e.g., 'plumbers in London')">
-                                    <button class="btn btn-primary" onclick="scrapeHeadless()">Scrape</button>
+                                    <button class="btn btn-primary" id="headless-scrape-btn" onclick="scrapeHeadless()">
+                                        <span class="btn-text">Scrape</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -189,7 +206,9 @@ def render_index_page():
                                         <input type="password" id="facebook-password" class="form-control" placeholder="Facebook Password (optional)">
                                     </div>
                                 </div>
-                                <button class="btn btn-primary" onclick="scrapeFacebook()">Scrape & View Live Logs</button>
+                                <button class="btn btn-primary" id="facebook-scrape-btn" onclick="scrapeFacebook()">
+                                    <span class="btn-text">Scrape & View Live Logs</span>
+                                </button>
                             </div>
                         </div>
                     `;
@@ -200,7 +219,9 @@ def render_index_page():
                             <div class="card-body">
                                 <div class="input-group mb-3">
                                     <input type="text" id="test-query" class="form-control" placeholder="Enter search query for Wikipedia">
-                                    <button class="btn btn-info" onclick="scrapeTest()">Run Test Scrape</button>
+                                    <button class="btn btn-info" id="test-scrape-btn" onclick="scrapeTest()">
+                                        <span class="btn-text">Run Test Scrape</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -208,61 +229,126 @@ def render_index_page():
                 }
             }
 
+            function setButtonLoading(buttonId, isLoading) {
+                const button = document.getElementById(buttonId);
+                const btnText = button.querySelector('.btn-text');
+                
+                if (isLoading) {
+                    button.classList.add('btn-loading');
+                    btnText.innerHTML = `
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Loading...
+                    `;
+                } else {
+                    button.classList.remove('btn-loading');
+                    // Reset button text based on button type
+                    if (buttonId.includes('api')) {
+                        btnText.innerHTML = 'Scrape';
+                    } else if (buttonId.includes('headless')) {
+                        btnText.innerHTML = 'Scrape';
+                    } else if (buttonId.includes('facebook')) {
+                        btnText.innerHTML = 'Scrape & View Live Logs';
+                    } else if (buttonId.includes('test')) {
+                        btnText.innerHTML = 'Run Test Scrape';
+                    }
+                }
+            }
+
             function scrapeAPI() {
                 const query = document.getElementById('api-query').value;
+                if (!query.trim()) {
+                    alert('Please enter a search query');
+                    return;
+                }
+                
                 const fullUrl = `/scrape/api?query=${encodeURIComponent(query)}`;
-                setupEventSource(fullUrl);
+                setupEventSource(fullUrl, 'api-scrape-btn');
             }
 
             function scrapeHeadless() {
                 const query = document.getElementById('headless-query').value;
+                if (!query.trim()) {
+                    alert('Please enter a search query');
+                    return;
+                }
+                
                 const fullUrl = `/scrape/headless?query=${encodeURIComponent(query)}`;
-                setupEventSource(fullUrl);
+                setupEventSource(fullUrl, 'headless-scrape-btn');
             }
 
-            function setupEventSource(url) {
+            function setupEventSource(url, buttonId) {
+                // Close any existing event source
+                if (currentEventSource) {
+                    currentEventSource.close();
+                }
+
                 const logOutput = document.getElementById('log-output');
                 logOutput.innerHTML = ''; // Clear previous logs
-                const eventSource = new EventSource(url);
+                
+                // Set button to loading state
+                setButtonLoading(buttonId, true);
+                
+                currentEventSource = new EventSource(url);
 
-                eventSource.onopen = function() {
+                currentEventSource.onopen = function() {
                     logOutput.innerHTML += 'Connection opened.<br>';
                 };
 
-                eventSource.onmessage = function(event) {
+                currentEventSource.onmessage = function(event) {
                     logOutput.innerHTML += event.data + '<br>';
                     logOutput.scrollTop = logOutput.scrollHeight;
                 };
 
-                eventSource.addEventListener('close', function() {
+                currentEventSource.addEventListener('close', function() {
                     logOutput.innerHTML += 'Connection closed by server.<br>';
-                    eventSource.close();
+                    currentEventSource.close();
+                    currentEventSource = null;
+                    setButtonLoading(buttonId, false);
                 });
 
-                eventSource.onerror = function(err) {
+                currentEventSource.onerror = function(err) {
                     logOutput.innerHTML += 'EventSource failed.<br>';
                     console.error("EventSource failed:", err);
-                    eventSource.close();
+                    currentEventSource.close();
+                    currentEventSource = null;
+                    setButtonLoading(buttonId, false);
                 };
             }
 
             function scrapeFacebook() {
                 const url = document.getElementById('facebook-url').value;
+                if (!url.trim()) {
+                    alert('Please enter a Facebook URL or search query');
+                    return;
+                }
+                
                 const email = document.getElementById('facebook-email').value;
                 const password = document.getElementById('facebook-password').value;
                 const fullUrl = `/scrape/facebook?url=${encodeURIComponent(url)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-                setupEventSource(fullUrl);
+                setupEventSource(fullUrl, 'facebook-scrape-btn');
             }
 
             function scrapeTest() {
                 const query = document.getElementById('test-query').value;
+                if (!query.trim()) {
+                    alert('Please enter a search query');
+                    return;
+                }
+                
                 const fullUrl = `/scrape/test?query=${encodeURIComponent(query)}`;
-                setupEventSource(fullUrl);
+                setupEventSource(fullUrl, 'test-scrape-btn');
             }
 
             // Show scraper options on page load
             document.addEventListener('DOMContentLoaded', () => {
                 showScraperOptions();
+            });
+
+            // Clean up event source when page unloads
+            window.addEventListener('beforeunload', () => {
+                if (currentEventSource) {
+                    currentEventSource.close();
+                }
             });
         </script>
     """
