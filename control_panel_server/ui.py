@@ -477,7 +477,7 @@ def render_results_page():
                                         <td>${item.rating || 'N/A'}</td>
                                         <td>${item.phone_number || 'N/A'}</td>
                                         <td>${item.url ? `<a href="${item.url}" target="_blank">Link</a>` : 'N/A'}</td>
-                                        <td>${new Date(item.scraped_at).toLocaleString()}</td>
+                                        <td>${new Date(item.scraped_at).toLocaleString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true, timeZoneName: 'short' })}</td>
                                     </tr>
                                 `;
                                 tbody.innerHTML += row;
@@ -879,8 +879,13 @@ def render_admin_page():
                     table += '</tr></thead><tbody>';
                     data.rows.forEach(row => {
                         table += '<tr>';
-                        row.forEach(cell => {
-                            table += `<td>${cell}</td>`;
+                        row.forEach((cell, index) => {
+                            const columnName = data.columns[index];
+                            if ((columnName.endsWith('_at') || columnName === 'scraped_at') && cell) {
+                                table += `<td>${new Date(cell).toLocaleString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true, timeZoneName: 'short' })}</td>`;
+                            } else {
+                                table += `<td>${cell}</td>`;
+                            }
                         });
                         table += '</tr>';
                     });
