@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Server</title>
+    <style>
+        /* ------------------------------------------------------------ */
+        /*  (styles unchanged – omitted here for brevity)               */
+        /* ------------------------------------------------------------ */
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            min-height:100vh;padding:20px;color:#333}
+        .container{max-width:1200px;margin:0 auto}
+        header{text-align:center;margin-bottom:40px;animation:fadeInDown .6s ease-out}
+        h1{color:#fff;font-size:3em;font-weight:700;text-shadow:2px 2px 4px rgba(0,0,0,.2);margin-bottom:10px}
+        .breadcrumb{background:rgba(255,255,255,.95);padding:15px 25px;border-radius:50px;
+            display:inline-block;box-shadow:0 4px 15px rgba(0,0,0,.1);margin-top:20px;font-size:.95em}
+        .breadcrumb a{color:#667eea;text-decoration:none;font-weight:500;transition:color .3s}
+        .breadcrumb a:hover{color:#764ba2}
+        .breadcrumb span{color:#999;margin:0 8px}
+        .action-bar{display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+            background:#fff;padding:20px 30px;border-radius:50px;box-shadow:0 10px 40px rgba(0,0,0,.3);
+            z-index:100;align-items:center;gap:20px;animation:slideUp .3s ease-out}
+        .action-bar.active{display:flex}
+        .selected-count{font-weight:600;color:#667eea}
+        .action-btn{padding:12px 24px;border:none;border-radius:25px;font-weight:600;
+            cursor:pointer;transition:all .3s;font-size:.95em}
+        .download-btn{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+        .download-btn:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(102,126,234,.4)}
+        .cancel-btn{background:#f5f5f5;color:#666}
+        .cancel-btn:hover{background:#e0e0e0}
+        .file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;
+            animation:fadeIn .8s ease-out}
+        .file-card{background:#fff;border-radius:15px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.1);
+            transition:all .3s ease;cursor:pointer;position:relative;overflow:hidden}
+        .file-card.selected{border:3px solid #667eea;transform:scale(.95)}
+        .file-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;
+            background:linear-gradient(90deg,#667eea,#764ba2);transform:scaleX(0);
+            transition:transform .3s ease}
+        .file-card:hover{transform:translateY(-5px);box-shadow:0 12px 30px rgba(0,0,0,.15)}
+        .file-card.selected:hover{transform:scale(.95) translateY(-2px)}
+        .file-card:hover::before{transform:scaleX(1)}
+        .checkbox-container{position:absolute;top:15px;right:15px;width:24px;height:24px;z-index:10}
+        .checkbox-container input[type=checkbox]{width:100%;height:100%;cursor:pointer;opacity:0}
+        .checkbox-custom{position:absolute;top:0;left:0;width:24px;height:24px;border:2px solid #ddd;
+            border-radius:6px;background:#fff;pointer-events:none;transition:all .3s}
+        .checkbox-container input:checked+.checkbox-custom{background:#667eea;border-color:#667eea}
+        .checkbox-container input:checked+.checkbox-custom::after{content:'✓';position:absolute;
+            top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-weight:bold;font-size:14px}
+        .file-icon{font-size:3em;margin-bottom:15px;display:block}
+        .folder-icon{color:#FFA726}.video-icon{color:#EF5350}.image-icon{color:#42A5F5}
+        .document-icon{color:#66BB6A}.file-icon-default{color:#9E9E9E}
+        .file-name{font-weight:600;color:#333;margin-bottom:5px;word-break:break-word;
+            font-size:1.05em;padding-right:30px}
+        .file-size{color:#999;font-size:.85em}
+        .video-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+            background:rgba(0,0,0,.95);z-index:1000;animation:fadeIn .3s}
+        .video-modal.active{display:flex;align-items:center;justify-content:center}
+        .video-container{max-width:90%;max-height:90vh;position:relative}
+        .video-container video{max-width:100%;max-height:90vh;border-radius:10px}
+        .close-btn{position:absolute;top:20px;right:20px;background:#fff;border:none;
+            width:40px;height:40px;border-radius:50%;font-size:24px;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;transition:all .3s;z-index:1001}
+        .close-btn:hover{background:#f44336;color:#fff;transform:rotate(90deg)}
+        .download-progress{position:fixed;bottom:30px;right:30px;background:#fff;padding:20px;
+            border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,.3);min-width:300px;
+            z-index:200;display:none;animation:slideUp .3s ease-out}
+        .download-progress.active{display:block}
+        .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+        .progress-title{font-weight:600;color:#333}
+        .progress-close{background:none;border:none;font-size:20px;cursor:pointer;color:#999;padding:0;
+            width:24px;height:24px}
+        .progress-bar-container{background:#f0f0f0;height:8px;border-radius:4px;overflow:hidden;margin-bottom:10px}
+        .progress-bar{background:linear-gradient(90deg,#667eea,#764ba2);height:100%;width:0%;transition:width .3s}
+        .progress-info{display:flex;justify-content:space-between;font-size:.85em;color:#666;margin-bottom:15px}
+        .progress-controls{display:flex;gap:10px}
+        .progress-btn{flex:1;padding:8px;border:none;border-radius:8px;font-weight:600;
+            cursor:pointer;transition:all .3s;font-size:.9em}
+        .pause-btn{background:#FFA726;color:#fff}
+        .pause-btn:hover{background:#FB8C00}
+        .cancel-download-btn{background:#f44336;color:#fff}
+        .cancel-download-btn:hover{background:#d32f2f}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes fadeInDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .empty-state{text-align:center;padding:60px 20px;color:#fff}
+        .empty-state-icon{font-size:4em;margin-bottom:20px;opacity:.5}
+        @media (max-width:768px){
+            h1{font-size:2em}
+            .file-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px}
+            .action-bar{flex-direction:column;gap:10px;padding:15px 20px}
+            .download-progress{right:10px;left:10px;bottom:10px;min-width:auto}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📁 File Server</h1>
+            <div class="breadcrumb" id="breadcrumb"></div>
+        </header>
+
+        <div class="file-grid" id="fileGrid"></div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <div class="empty-state-icon">📭</div>
+            <h2>No files found</h2>
+        </div>
+    </div>
+
+    <div class="action-bar" id="actionBar">
+        <span class="selected-count"><span id="selectedCount">0</span> files selected</span>
+        <button class="action-btn download-btn" onclick="downloadSelected()">📥 Download as ZIP</button>
+        <button class="action-btn cancel-btn" onclick="clearSelection()">✕ Cancel</button>
+    </div>
+
+    <div class="download-progress" id="downloadProgress">
+        <div class="progress-header">
+            <span class="progress-title">Downloading...</span>
+            <button class="progress-close" onclick="hideProgress()">×</button>
+        </div>
+        <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-info"><span id="progressText">0%</span><span id="progressSize">0 MB / 0 MB</span></div>
+        <div class="progress-controls">
+            <button class="progress-btn pause-btn" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+            <button class="progress-btn cancel-download-btn" onclick="cancelDownload()">✕ Cancel</button>
+        </div>
+    </div>
+
+    <div class="video-modal" id="videoModal">
+        <button class="close-btn" onclick="closeVideo()">×</button>
+        <div class="video-container"><video id="videoPlayer" controls autoplay></video></div>
+    </div>
+
+    <script>
+        /* ------------------------------------------------------------
+           Data injected by the server (do NOT edit)
+        ------------------------------------------------------------ */
+        const files = __FILES_DATA__;
+        const currentPath = window.location.pathname;      // decoded, e.g. "/Drone Videos/"
+        const selectedFiles = new Map();
+        let currentDownload = null;
+
+        /* ------------------------------------------------------------
+           Helpers (icons, formatting, breadcrumb, …)
+        ------------------------------------------------------------ */
+        function getFileIcon(name,isDir){
+            if(isDir) return {icon:'📁',class:'folder-icon'};
+            const ext = name.split('.').pop().toLowerCase();
+            const map = {
+                mp4:{icon:'🎬',class:'video-icon'},mov:{icon:'🎬',class:'video-icon'},
+                avi:{icon:'🎬',class:'video-icon'},mkv:{icon:'🎬',class:'video-icon'},
+                jpg:{icon:'🖼️',class:'image-icon'},jpeg:{icon:'🖼️',class:'image-icon'},
+                png:{icon:'🖼️',class:'image-icon'},gif:{icon:'🖼️',class:'image-icon'},
+                pdf:{icon:'📄',class:'document-icon'},doc:{icon:'📝',class:'document-icon'},
+                docx:{icon:'📝',class:'document-icon'},txt:{icon:'📝',class:'document-icon'}
+            };
+            return map[ext]||{icon:'📎',class:'file-icon-default'};
+        }
+        function formatSize(b){if(!b) return '-'; const k=1024; const s=['Bytes','KB','MB','GB']; const i=Math.floor(Math.log(b)/Math.log(k));
+            return Math.round(b/Math.pow(k,i)*100)/100 + ' ' + s[i]; }
+        function updateBreadcrumb(){
+            const parts = currentPath.split('/').filter(p=>p);
+            let url = ''; let html = '<a href="/">🏠 Home</a>';
+            parts.forEach(p=>{ url += '/' + p; html += `<span>/</span><a href="${url}">${decodeURIComponent(p)}</a>`; });
+            document.getElementById('breadcrumb').innerHTML = html;
+        }
+        function isVideoFile(name){ const e = name.split('.').pop().toLowerCase(); return ['mp4','mov','avi','mkv','webm'].includes(e); }
+        function openVideo(url){ const m=document.getElementById('videoModal'); const p=document.getElementById('videoPlayer'); p.src=url; m.classList.add('active'); document.body.style.overflow='hidden'; }
+        function closeVideo(){ const m=document.getElementById('videoModal'); const p=document.getElementById('videoPlayer'); p.pause(); p.src=''; m.classList.remove('active'); document.body.style.overflow='auto'; }
+
+        /* ------------------------------------------------------------
+           Selection handling
+        ------------------------------------------------------------ */
+        function toggleFileSelection(fileData,cb){
+            const file = JSON.parse(decodeURIComponent(fileData));
+            if(file.isDir){ cb.checked=false; return; }
+            if(cb.checked) selectedFiles.set(file.href,file);
+            else           selectedFiles.delete(file.href);
+            updateActionBar();
+        }
+        function updateActionBar(){
+            const bar = document.getElementById('actionBar');
+            const cnt = document.getElementById('selectedCount');
+            cnt.textContent = selectedFiles.size;
+            bar.classList.toggle('active', selectedFiles.size>0);
+        }
+        function clearSelection(){
+            selectedFiles.clear();
+            document.querySelectorAll('.file-card input[type=checkbox]').forEach(cb=>cb.checked=false);
+            document.querySelectorAll('.file-card.selected').forEach(c=>c.classList.remove('selected'));
+            updateActionBar();
+        }
+
+        /* ------------------------------------------------------------
+           ----------   ONLY THIS FUNCTION WAS CHANGED   -------------
+           We prepend the **decoded** current folder (spaces stay as spaces)
+           – no extra percent‑encoding.
+        ------------------------------------------------------------ */
+        async function downloadSelected(){
+            if(!selectedFiles.size) return;
+
+            const progressDiv = document.getElementById('downloadProgress');
+            progressDiv.classList.add('active');
+
+            // ----- 1️⃣ Build the list that will be sent to the server -----
+            const rawList = Array.from(selectedFiles.values());
+
+            // currentPath is already decoded (e.g. "/Drone Videos/")
+            const folderPath = currentPath.replace(/^\/|\/$/g,'');   // "Drone Videos" or "" for root
+
+            const filesToSend = rawList.map(f=>{
+                // If we are inside a sub‑folder, prepend it (plain, not URL‑encoded)
+                const newHref = folderPath ? `${folderPath}/${f.href}` : f.href;
+                return {
+                    name : f.name,
+                    href : newHref,          // plain relative path, spaces are fine
+                    isDir: f.isDir,
+                    size : f.size
+                };
+            });
+
+            // ----- 2️⃣ POST the payload -----------------------------------
+            try{
+                const response = await fetch('/download-zip',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({files:filesToSend})
+                });
+
+                if(!response.ok){
+                    const txt = await response.text();
+                    throw new Error('Download failed: '+txt);
+                }
+
+                // ----- 3️⃣ Stream the zip back (progress bar) ---------------
+                const contentLength = response.headers.get('content-length');
+                const total = parseInt(contentLength,10);
+                let loaded = 0;
+                const reader = response.body.getReader();
+                const chunks = [];
+
+                currentDownload = {reader, active:true};
+
+                while(true){
+                    const {done,value} = await reader.read();
+                    if(done || !currentDownload.active) break;
+                    chunks.push(value);
+                    loaded += value.length;
+                    const perc = Math.round(loaded/total*100);
+                    document.getElementById('progressBar').style.width = perc+'%';
+                    document.getElementById('progressText').textContent = perc+'%';
+                    document.getElementById('progressSize').textContent =
+                        `${formatSize(loaded)} / ${formatSize(total)}`;
+                    while(!currentDownload.active){
+                        await new Promise(r=>setTimeout(r,100));
+                    }
+                }
+
+                if(currentDownload.active){
+                    const blob = new Blob(chunks);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download='files.zip'; a.click();
+                    URL.revokeObjectURL(url);
+                    progressDiv.classList.remove('active');
+                    clearSelection();
+                }
+            }catch(err){
+                alert(err.message);
+                progressDiv.classList.remove('active');
+            }
+            currentDownload = null;
+        }
+
+        /* ------------------------------------------------------------
+           Pause / cancel / UI helpers (unchanged)
+        ------------------------------------------------------------ */
+        function togglePause(){
+            if(!currentDownload) return;
+            const btn = document.getElementById('pauseBtn');
+            currentDownload.active = !currentDownload.active;
+            btn.innerHTML = currentDownload.active ? '⏸ Pause' : '▶ Resume';
+        }
+        function cancelDownload(){
+            if(currentDownload){
+                currentDownload.active = false;
+                currentDownload.reader.cancel();
+                currentDownload = null;
+            }
+            hideProgress();
+        }
+        function hideProgress(){ document.getElementById('downloadProgress').classList.remove('active'); }
+
+        /* ------------------------------------------------------------
+           Render the file grid
+        ------------------------------------------------------------ */
+        function displayFiles(){
+            const grid = document.getElementById('fileGrid');
+            const empty = document.getElementById('emptyState');
+            if(!files.length){ grid.style.display='none'; empty.style.display='block'; return; }
+            grid.innerHTML=''; empty.style.display='none';
+
+            files.sort((a,b)=>{
+                if(a.isDir && !b.isDir) return -1;
+                if(!a.isDir && b.isDir) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            files.forEach(file=>{
+                const {icon, class:cls} = getFileIcon(file.name, file.isDir);
+                const card = document.createElement('div');
+                card.className='file-card';
+
+                const checkboxHTML = file.isDir ? '' : `
+                    <div class="checkbox-container">
+                        <input type="checkbox"
+                               onclick="event.stopPropagation(); toggleFileSelection('${encodeURIComponent(JSON.stringify(file))}', this); this.parentElement.parentElement.classList.toggle('selected', this.checked)">
+                        <span class="checkbox-custom"></span>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    ${checkboxHTML}
+                    <span class="file-icon ${cls}">${icon}</span>
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${file.isDir ? 'Folder' : formatSize(file.size)}</div>
+                `;
+
+                card.onclick = e=>{
+                    if(e.target.type==='checkbox') return;
+                    if(isVideoFile(file.name) && !file.isDir) openVideo(file.href);
+                    else window.location.href = file.href;
+                };
+                grid.appendChild(card);
+            });
+        }
+
+        /* ------------------------------------------------------------
+           Global keyboard / modal handling
+        ------------------------------------------------------------ */
+        document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeVideo(); if(selectedFiles.size) clearSelection(); } });
+        document.getElementById('videoModal').addEventListener('click', e=>{ if(e.target.id==='videoModal') closeVideo(); });
+
+        updateBreadcrumb();
+        displayFiles();
+    </script>
+</body>
+</html>
